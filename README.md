@@ -1,88 +1,320 @@
-#  iGibson: A Simulation Environment to train Robots in Large Realistic Interactive Scenes
+# iGibson VLA Data Collection
 
-<img src="./docs/images/igibsonlogo.png" width="500"> <img src="./docs/images/igibson.gif" width="250"> 
+iGibson 시뮬레이터를 활용한 VLA(Vision-Language-Action) 데이터 수집 파이프라인입니다.
+[LeRobot](https://github.com/huggingface/lerobot) 포맷을 지원하여 로봇 학습 데이터셋을 생성할 수 있습니다.
 
-iGibson is a simulation environment providing fast visual rendering and physics simulation based on Bullet. iGibson is equipped with fifteen fully interactive high quality scenes, hundreds of large 3D scenes reconstructed from real homes and offices, and compatibility with datasets like CubiCasa5K and 3D-Front, providing 8000+ additional interactive scenes. Some of the features of iGibson include domain randomization, integration with motion planners and easy-to-use tools to collect human demonstrations. With these scenes and features, iGibson allows researchers to train and evaluate robotic agents that use visual signals to solve navigation and manipulation tasks such as opening doors, picking up and placing objects, or searching in cabinets.
+> 이 프로젝트는 [StanfordVL/iGibson](https://github.com/StanfordVL/iGibson)을 기반으로 합니다.
 
-### Latest Updates
-[8/9/2021] Major update to iGibson to reach iGibson 2.0, for details please refer to our [arxiv preprint](https://arxiv.org/abs/2108.03272). 
+## 📋 목차
 
--  iGibson 2.0 supports object states, including temperature, wetness level, cleanliness level, and toggled and sliced states, necessary to cover a wider range of tasks. 
-- iGibson 2.0 implements a set of predicate logic functions that map the simulator states to logic states like Cooked or Soaked.
-- iGibson 2.0 includes a virtual reality (VR) interface to immerse humans in its scenes to collect demonstrations. 
+- [설치](#설치)
+- [데이터 다운로드](#데이터-다운로드)
+- [데이터 수집](#데이터-수집)
+- [데이터 로드](#데이터-로드)
+- [프로젝트 구조](#프로젝트-구조)
 
+---
 
-[12/1/2020] Major update to iGibson to reach iGibson 1.0, for details please refer to our [arxiv preprint](https://arxiv.org/abs/2012.02924). 
+## 설치
 
-- Release of iGibson dataset that includes 15 fully interactive scenes and 500+ object models annotated with materials and physical attributes on top of [existing 3D articulated models](https://cs.stanford.edu/~kaichun/partnet/).
-- Compatibility to import [CubiCasa5K](https://github.com/CubiCasa/CubiCasa5k) and [3D-Front](https://tianchi.aliyun.com/specials/promotion/alibaba-3d-scene-dataset) scene descriptions leading to more than 8000 extra interactive scenes!
-- New features in iGibson: Physically based rendering, 1-beam and 16-beam LiDAR, domain randomization, motion planning integration, tools to collect human demos and more!
-- Code refactoring, better class structure and cleanup. 
+### 방법 1: Docker (권장)
 
-[05/14/2020] Added dynamic light support :flashlight:
+```bash
+# 레포 클론
+git clone https://github.com/hyeon-mun/iGibson.git
+cd iGibson
 
-[04/28/2020] Added support for Mac OSX :computer:
+# Docker 이미지 빌드
+docker build -t igibson-vla -f .devcontainer/Dockerfile .
 
-### Citation
-If you use iGibson or its assets and models, consider citing the following publication:
-
-```
-@inproceedings{li2022igibson,
-  title = 	 {iGibson 2.0: Object-Centric Simulation for Robot Learning of Everyday Household Tasks},
-  author =       {Li, Chengshu and Xia, Fei and Mart\'in-Mart\'in, Roberto and Lingelbach, Michael and Srivastava, Sanjana and Shen, Bokui and Vainio, Kent Elliott and Gokmen, Cem and Dharan, Gokul and Jain, Tanish and Kurenkov, Andrey and Liu, Karen and Gweon, Hyowon and Wu, Jiajun and Fei-Fei, Li and Savarese, Silvio},
-  booktitle = 	 {Proceedings of the 5th Conference on Robot Learning},
-  pages = 	 {455--465},
-  year = 	 {2022},
-  editor = 	 {Faust, Aleksandra and Hsu, David and Neumann, Gerhard},
-  volume = 	 {164},
-  series = 	 {Proceedings of Machine Learning Research},
-  month = 	 {08--11 Nov},
-  publisher =    {PMLR},
-  pdf = 	 {https://proceedings.mlr.press/v164/li22b/li22b.pdf},
-  url = 	 {https://proceedings.mlr.press/v164/li22b.html},
-} 
+# 컨테이너 실행 (GPU 필요)
+docker run -it --gpus all \
+    -v $(pwd):/workspace/iGibson \
+    -v /path/to/data:/workspace/iGibson/data \
+    igibson-vla
 ```
 
+### 방법 2: 수동 설치
+
+```bash
+# 1. iGibson 설치
+git clone https://github.com/hyeon-mun/iGibson.git
+cd iGibson
+pip install -e .
+
+# 2. 추가 의존성 설치
+pip install h5py pandas pyarrow pillow
+
+# 3. ffmpeg 설치 (비디오 인코딩용)
+sudo apt-get install ffmpeg
+
+# 4. LeRobot 클론 (LeRobot 포맷 사용 시)
+git clone https://github.com/huggingface/lerobot.git third_party/lerobot
 ```
-@inproceedings{shen2021igibson,
-      title={iGibson 1.0: a Simulation Environment for Interactive Tasks in Large Realistic Scenes}, 
-      author={Bokui Shen and Fei Xia and Chengshu Li and Roberto Mart\'in-Mart\'in and Linxi Fan and Guanzhi Wang and Claudia P\'erez-D'Arpino and Shyamal Buch and Sanjana Srivastava and Lyne P. Tchapmi and Micael E. Tchapmi and Kent Vainio and Josiah Wong and Li Fei-Fei and Silvio Savarese},
-      booktitle={2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
-      year={2021},
-      pages={accepted},
-      organization={IEEE}
-}
+
+---
+
+## 데이터 다운로드
+
+### iGibson Assets 다운로드
+
+```bash
+# 기본 에셋 다운로드
+python -m igibson.utils.assets_utils --download_assets
+
+# 데모 데이터 다운로드
+python -m igibson.utils.assets_utils --download_demo_data
 ```
 
-### Documentation
-The documentation for iGibson can be found here: [iGibson Documentation](http://svl.stanford.edu/igibson/docs/). It includes installation guide (including data download instructions), quickstart guide, code examples, and APIs.
+### Gibson 데이터셋 다운로드
 
-If you want to know more about iGibson, you can also check out [our webpage](http://svl.stanford.edu/igibson),  [iGibson 2.0 arxiv preprint](https://arxiv.org/abs/2108.03272) and [iGibson 1.0 arxiv preprint](https://arxiv.org/abs/2012.02924).
+Gibson 데이터셋은 라이센스 동의 후 다운로드할 수 있습니다:
+1. [Stanford Gibson 데이터셋](http://gibsonenv.stanford.edu/database/) 페이지 방문
+2. 라이센스 동의 후 다운로드 링크 획득
+3. 다운로드 후 `data/` 폴더에 배치
 
-### Dowloading the Dataset of 3D Scenes
+```bash
+# 데이터 폴더 구조
+data/
+├── assets/
+├── g_dataset/          # Gibson 데이터셋
+│   ├── Rs/
+│   ├── Beechwood/
+│   └── ...
+└── ig_dataset/         # iGibson 데이터셋
+```
 
-For instructions to install iGibson and download dataset, you can visit [installation guide](http://svl.stanford.edu/igibson/docs/installation.html) and [dataset download guide](http://svl.stanford.edu/igibson/docs/dataset.html).
+---
 
-There are other datasets we link to iGibson. We include support to use CubiCasa5K and 3DFront scenes, adding up more than 10000 extra interactive scenes to use in iGibson! Check our [documentation](https://github.com/StanfordVL/iGibson/tree/master/igibson/utils/data_utils/ext_scene) on how to use those.
+## 데이터 수집
 
-We also maintain compatibility with datasets of 3D reconstructed large real-world scenes (homes and offices) that you can download and use with iGibson. For Gibson Dataset and Stanford 2D-3D-Semantics Dataset, please fill out this [form](https://forms.gle/36TW9uVpjrE1Mkf9A). For Matterport3D Dataset, please fill in this [form](http://dovahkiin.stanford.edu/matterport/public/MP_TOS.pdf) and send it to [matterport3d@googlegroups.com](mailto:matterport3d@googlegroups.com). Please put "use with iGibson simulator" in your email. Check our [dataset download guide](http://svl.stanford.edu/igibson/docs/dataset.html) for more details.
+### LeRobot 포맷 (권장)
 
-### Using iGibson with VR
-If you want to use iGibson VR interface, please visit the [VR guide (TBA)].
+LeRobot v3.0 포맷으로 데이터를 수집합니다. HuggingFace 생태계와 호환됩니다.
 
+```bash
+# 기본 수집 (비디오 모드)
+python scripts/lerobot_data_collection.py \
+    --scene Rs \
+    --num_episodes 100 \
+    --output_dir ./lerobot_dataset \
+    --repo_id igibson_nav
 
-### Contributing
-This is the github repository for iGibson (pip package `igibson`) 2.0 release. (For iGibson 1.0, please use `1.0` branch.) Bug reports, suggestions for improvement, as well as community developments are encouraged and appreciated. Please, consider creating an issue or sending us an email. 
+# 이미지 모드 (비디오 인코딩 없이)
+python scripts/lerobot_data_collection.py \
+    --scene Rs \
+    --num_episodes 100 \
+    --output_dir ./lerobot_dataset \
+    --repo_id igibson_nav \
+    --no_video
 
-The support for our previous version of the environment, Gibson, can be found in the [following repository](http://github.com/StanfordVL/GibsonEnv/).
+# Depth 없이 수집
+python scripts/lerobot_data_collection.py \
+    --scene Rs \
+    --num_episodes 100 \
+    --no_depth
+```
 
-### Acknowledgments
+**생성되는 데이터 구조:**
+```
+lerobot_dataset/igibson_nav/
+├── data/
+│   └── chunk-000/
+│       └── file-000.parquet      # 프레임 데이터
+├── meta/
+│   ├── info.json                 # 데이터셋 메타데이터
+│   ├── stats.json                # 정규화 통계
+│   ├── tasks.parquet             # 태스크 목록
+│   └── episodes/
+│       └── chunk-000/
+│           └── file-000.parquet  # 에피소드 메타데이터
+└── videos/                       # 비디오 파일 (--no_video 미사용 시)
+    └── observation_images_rgb/
+        └── chunk-000/
+            └── episode-000000.mp4
+```
 
-iGibson uses code from a few open source repositories. Without the efforts of these folks (and their willingness to release their implementations under permissable copyleft licenses), iGibson would not be possible. We thanks these authors for their efforts!
+**수집되는 Features:**
 
-- Syoyo Fujita: [tinyobjloader](https://github.com/syoyo/tinyobjloader)
-- Erwin Coumans: [egl_example](https://github.com/erwincoumans/egl_example)
-- Caelan Garrett: [ss-pybullet](https://github.com/caelan/ss-pybullet)
-- Sean Barrett: [stb](https://github.com/nothings/stb)
-- Michał Siejak: [PBR](https://github.com/Nadrin/PBR)
-- [CryptoPP](https://www.cryptopp.com/)
+| Feature | Shape | 설명 |
+|---------|-------|------|
+| `observation.images.rgb` | (480, 640, 3) | RGB 카메라 이미지 |
+| `observation.images.depth` | (480, 640, 3) | Depth 이미지 (RGB 변환) |
+| `observation.state` | (13,) | 로봇 상태 벡터 |
+| `action` | (2,) | [linear_vel, angular_vel] |
+| `observation.goal_distance` | (1,) | 목표까지 거리 |
+| `task` | string | 자연어 명령 |
+
+**observation.state 구성:**
+- `pos_x, pos_y, pos_z`: 로봇 위치
+- `quat_x, quat_y, quat_z, quat_w`: 로봇 방향 (quaternion)
+- `lin_vel_x, lin_vel_y, lin_vel_z`: 선속도
+- `ang_vel_x, ang_vel_y, ang_vel_z`: 각속도
+
+### HDF5 포맷
+
+기존 방식의 HDF5 포맷으로 데이터를 수집합니다.
+
+```bash
+# Shell 스크립트 사용
+./scripts/run_vla_collection.sh -s Rs -n 100
+
+# Python 직접 실행
+python scripts/vla_data_collection.py \
+    --scene Rs \
+    --num_episodes 100 \
+    --output_dir ./vla_dataset
+```
+
+### HDF5 → LeRobot 변환
+
+기존 HDF5 데이터를 LeRobot 포맷으로 변환합니다.
+
+```bash
+python scripts/convert_hdf5_to_lerobot.py \
+    --input_dir ./vla_dataset \
+    --output_dir ./lerobot_dataset \
+    --repo_id igibson_nav_converted
+```
+
+---
+
+## 데이터 로드
+
+### LeRobot 포맷 로드
+
+```python
+import pandas as pd
+import json
+
+# 메타데이터 로드
+with open("lerobot_dataset/igibson_nav/meta/info.json") as f:
+    info = json.load(f)
+print(f"Episodes: {info['total_episodes']}, Frames: {info['total_frames']}")
+
+# 프레임 데이터 로드
+df = pd.read_parquet("lerobot_dataset/igibson_nav/data/chunk-000/file-000.parquet")
+print(df.head())
+
+# 통계 로드 (정규화용)
+with open("lerobot_dataset/igibson_nav/meta/stats.json") as f:
+    stats = json.load(f)
+```
+
+### HDF5 포맷 로드
+
+```python
+from scripts.vla_data_loader import VLADataset, VLATorchDataset
+
+# 기본 로드
+dataset = VLADataset("./vla_dataset")
+print(dataset.get_statistics())
+
+# PyTorch DataLoader와 함께 사용
+torch_dataset = VLATorchDataset("./vla_dataset")
+loader = torch.utils.data.DataLoader(torch_dataset, batch_size=32)
+
+for batch in loader:
+    rgb = batch["rgb"]        # (B, C, H, W)
+    action = batch["action"]  # (B, 2)
+    # ...
+```
+
+---
+
+## 프로젝트 구조
+
+```
+iGibson/
+├── scripts/
+│   ├── lerobot_data_collection.py   # LeRobot 포맷 수집
+│   ├── convert_hdf5_to_lerobot.py   # HDF5 → LeRobot 변환
+│   ├── vla_data_collection.py       # HDF5 포맷 수집
+│   ├── vla_data_loader.py           # HDF5 데이터 로더
+│   ├── run_lerobot_collection.sh    # LeRobot 수집 스크립트
+│   ├── run_vla_collection.sh        # HDF5 수집 스크립트
+│   └── configs/
+│       └── vla_collection_config.yaml
+├── .devcontainer/
+│   ├── Dockerfile
+│   └── devcontainer.json
+├── data/                            # 데이터 폴더 (gitignore)
+├── third_party/
+│   └── lerobot/                     # LeRobot (별도 클론 필요)
+└── igibson/                         # iGibson 코어
+```
+
+---
+
+## 설정 파일
+
+`scripts/configs/vla_collection_config.yaml`에서 수집 설정을 변경할 수 있습니다:
+
+```yaml
+# Scene 설정
+scene: gibson
+scene_id: Rs
+
+# 이미지 설정
+image_width: 640
+image_height: 480
+
+# LiDAR 설정 (Velodyne VLP-16 스타일)
+n_horizontal_rays: 360
+n_vertical_beams: 16
+laser_linear_range: 100.0
+
+# Task 설정
+task: point_nav_random
+target_dist_min: 3.0
+target_dist_max: 10.0
+```
+
+---
+
+## 지원 Scene
+
+| Scene ID | 설명 |
+|----------|------|
+| Rs | 작은 아파트 |
+| Beechwood | 큰 주택 |
+| Ihlen | 중간 크기 주택 |
+| Merom | 사무실 |
+| ... | [전체 목록](http://gibsonenv.stanford.edu/database/) |
+
+---
+
+## 문제 해결
+
+### EGL 에러
+```bash
+# headless 렌더링을 위한 환경변수 설정
+unset DISPLAY
+```
+
+### ffmpeg 미설치
+```bash
+sudo apt-get install ffmpeg
+```
+
+### GPU 메모리 부족
+```bash
+# 이미지 해상도 줄이기
+python scripts/lerobot_data_collection.py \
+    --image_height 240 --image_width 320 ...
+```
+
+---
+
+## 라이센스
+
+이 프로젝트는 [MIT License](LICENSE)를 따릅니다.
+iGibson은 [Stanford의 라이센스](https://github.com/StanfordVL/iGibson)를 따릅니다.
+
+---
+
+## 참고 자료
+
+- [iGibson 공식 문서](http://svl.stanford.edu/igibson/)
+- [LeRobot GitHub](https://github.com/huggingface/lerobot)
+- [Gibson 데이터셋](http://gibsonenv.stanford.edu/database/)
