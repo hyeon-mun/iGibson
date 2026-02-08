@@ -1,0 +1,96 @@
+# VLA Data Collection Configuration
+# Non-Interactive (Gibson) Scene용 설정
+
+# =============================================================================
+# Scene Settings
+# =============================================================================
+scene: gibson                    # gibson (non-interactive) 또는 igibson (interactive)
+scene_id: Rs                     # Scene ID (Rs, Beechwood, etc.)
+build_graph: true                # 네비게이션 그래프 빌드
+load_texture: true
+pybullet_load_texture: false     # headless 모드에서는 false 권장
+trav_map_type: no_obj            # 순회 맵 타입
+trav_map_resolution: 0.1
+trav_map_erosion: 2
+
+# =============================================================================
+# Robot Settings
+# =============================================================================
+robot:
+  name: Turtlebot
+  action_type: continuous
+  action_normalize: true
+  base_name: null
+  scale: 1.0
+  self_collision: false
+  controller_config:
+    base:
+      name: DifferentialDriveController
+
+# =============================================================================
+# Task Settings
+# =============================================================================
+task: point_nav_random           # 랜덤 목표점 네비게이션
+target_dist_min: 3.0             # 최소 목표 거리 (m)
+target_dist_max: 10.0            # 최대 목표 거리 (m)
+goal_format: polar               # polar 또는 cartesian
+task_obs_dim: 4
+
+# =============================================================================
+# Reward Settings (데이터 수집에서는 사용 안함)
+# =============================================================================
+reward_type: geodesic
+success_reward: 10.0
+potential_reward_weight: 1.0
+collision_reward_weight: -0.1
+
+# =============================================================================
+# Termination Settings
+# =============================================================================
+dist_tol: 0.36                   # 목표 도달 허용 오차 (m)
+max_step: 500                    # 에피소드당 최대 스텝
+max_collisions_allowed: 500
+
+# =============================================================================
+# Sensor Settings - Vision
+# =============================================================================
+output: [task_obs, rgb, depth, scan]
+
+# 카메라 설정
+fisheye: false
+image_width: 640
+image_height: 480
+vertical_fov: 45
+
+# Depth 설정
+depth_low: 0.5
+depth_high: 10.0
+
+# =============================================================================
+# Sensor Settings - LiDAR (Velodyne VLP-16 스타일)
+# =============================================================================
+# 16채널 Velodyne 설정
+n_horizontal_rays: 360           # 수평 레이 수
+n_vertical_beams: 16             # 수직 빔 수 (Velodyne 16ch)
+laser_linear_range: 100.0        # 최대 거리 (m)
+laser_angular_range: 360.0       # 수평 시야각 (도)
+min_laser_dist: 0.1              # 최소 거리 (m)
+laser_link_name: scan_link
+
+# =============================================================================
+# Noise Settings
+# =============================================================================
+depth_noise_rate: 0.0            # Depth 노이즈 (0.0 = 노이즈 없음)
+scan_noise_rate: 0.0             # LiDAR 노이즈
+
+# =============================================================================
+# Visualization (데이터 수집 시 false 권장)
+# =============================================================================
+visible_target: false
+visible_path: false
+
+# =============================================================================
+# Misc
+# =============================================================================
+initial_pos_z_offset: 0.1
+collision_ignore_link_a_ids: [1, 2, 3, 4]
