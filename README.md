@@ -20,6 +20,19 @@ iGibson 시뮬레이터를 활용한 VLA(Vision-Language-Action) 데이터 수�
 ### 방법 1: Docker (권장)
 
 ```bash
+# 사전 빌드된 이미지 pull
+docker pull hyeonmun/igibson-vla:latest
+
+# 컨테이너 실행 (GPU 필요)
+docker run -it --gpus all \
+    -v $(pwd):/workspace/iGibson \
+    -v /path/to/data:/workspace/iGibson/data \
+    hyeonmun/igibson-vla:latest
+```
+
+직접 빌드하려면:
+
+```bash
 # 레포 클론
 git clone https://github.com/hyeon-mun/iGibson.git
 cd iGibson
